@@ -22,4 +22,3 @@ class ModelTests(TestCase):
             password='aaf'
         )
         assert user.email == email.lower()
-
