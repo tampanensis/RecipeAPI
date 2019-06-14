@@ -32,4 +32,3 @@ class AdminSiteTests(TestCase):
         url = reverse('admin:core_user_add')
         res = self.client.get(url)
         assert res.status_code == 200
-
