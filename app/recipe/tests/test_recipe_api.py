@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -65,7 +67,7 @@ class PrivateRecipeAPITests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def test_retrieve_recepes(self):
+    def test_retrieve_recipes(self):
         sample_recipe(user=self.user)
         sample_recipe(user=self.user)
 
@@ -192,8 +194,11 @@ class RecipeImageUploadTests(TestCase):
     def tearDown(self):
         self.recipe.image.delete()
 
-    def test_upload_image_to_recipe(self):
+    @patch('uuid.uuid4')
+    def test_upload_image_to_recipe(self, mock_uuid):
         url = image_upload_url(self.recipe.id)
+        uuid = 'test-uuid'
+        mock_uuid.return_value = uuid
         with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
             img = Image.new('RGB', (10, 10))
             img.save(ntf, format='JPEG')
@@ -203,6 +208,10 @@ class RecipeImageUploadTests(TestCase):
             assert res.status_code == status.HTTP_200_OK
             assert 'image' in res.data
             assert os.path.exists(self.recipe.image.path)
+            url = detail_url(self.recipe.id)
+            res = self.client.get(url)
+            assert 'image' in res.data
+            assert '/recipe/test-uuid.jpg'in res.data['image']
 
     def test_upload_image_bad_request(self):
         url = image_upload_url(self.recipe.id)
@@ -252,3 +261,4 @@ class RecipeImageUploadTests(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
+
